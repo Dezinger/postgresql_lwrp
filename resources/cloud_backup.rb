@@ -78,7 +78,7 @@ action_class do
       check_file = "#{wal_e_attributes['path']}/#{wal_e_version}.check"
 
       python_execute 'install wal-e' do
-        not_if { File.exist?(check_file) }
+        not_if { ::File.exist?(check_file) }
         command "-m pip install #{archive_url}"
         virtualenv wal_e_attributes['path']
       end
