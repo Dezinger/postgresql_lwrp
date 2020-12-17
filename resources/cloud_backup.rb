@@ -73,11 +73,25 @@ action_class do
     wal_e_version = wal_e_attributes['version']
     case wal_e_attributes['install_source']
     when 'github'
+
       archive_url = "#{wal_e_repo}/archive/#{wal_e_version}.zip"
-      python_package 'wal-e' do
-        package_name archive_url
+      check_file = "#{wal_e_attributes['path']}/#{wal_e_version}.check"
+
+      python_execute 'install wal-e' do
+        not_if { File.exist?(check_file) }
+        command "-m pip install #{archive_url}"
         virtualenv wal_e_attributes['path']
       end
+
+      file check_file do
+        action :touch
+      end
+
+      #python_package 'wal-e' do
+      #  package_name archive_url
+      #  virtualenv wal_e_attributes['path']
+      #end
+
     when 'pypi'
       python_package 'wal-e' do
         version wal_e_version
