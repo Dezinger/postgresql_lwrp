@@ -25,34 +25,6 @@
 # SOFTWARE.
 #
 
-include_recipe 'python'
+# Install packages
 
-# Install packages and pips
-node['postgresql']['cloud_backup']['packages'].each do |pkg|
-  package pkg
-end
-
-python_virtualenv node['postgresql']['cloud_backup']['wal_e_path']
-
-case node['postgresql']['cloud_backup']['install_source']
-when 'github'
-  archive_url = "#{node['postgresql']['cloud_backup']['github_repo']}/archive/#{node['postgresql']['cloud_backup']['version']}.zip"
-  python_pip 'wal-e' do
-    package_name archive_url
-    virtualenv node['postgresql']['cloud_backup']['wal_e_path']
-  end
-when 'pypi'
-  python_pip 'wal-e' do
-    version node['postgresql']['cloud_backup']['version']
-    virtualenv node['postgresql']['cloud_backup']['wal_e_path']
-  end
-end
-
-template 'postgresql cloud backup' do
-  path "#{node['postgresql']['cloud_backup']['wal_e_path']}/bin/postgresql_cloud_backup_helper.sh"
-  source 'postgresql_cloud_backup_helper.sh.erb'
-  mode '0755'
-  variables(
-    wal_e_bin: node['postgresql']['cloud_backup']['wal_e_bin']
-  )
-end
+Chef::Log.warn('recipe[postgresql_lwrp::cloud_backup] is no longer necessary to use the postgresql_cloud_backup resource. Please update your cookbooks or remove this recipe from your runlist.')

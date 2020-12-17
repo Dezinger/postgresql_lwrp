@@ -1,6 +1,5 @@
 include_recipe 'postgresql_lwrp::apt_official_repository'
 include_recipe 'postgresql_lwrp::default'
-include_recipe 'sysctl::default'
 
 service 'postgresql' do
   action :restart
@@ -12,8 +11,10 @@ end
 
 postgresql 'slave' do
   cluster_create_options('locale' => 'en_US.UTF-8')
+  cluster_version node['pgtest']['version']
   configuration(
     port: '5433',
+    hot_standby: 'on',
     listen_addresses: '*',
     max_connections: 300,
     ssl_renegotiation_limit: 0,

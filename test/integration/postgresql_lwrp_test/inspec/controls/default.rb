@@ -9,54 +9,88 @@ pg_version = attribute('pg_version', default: nil, description: 'Set postgresql 
 
 control 'postgres users' do
   title 'Users should be configured'
-  describe postgres_user('test01', 'test01') do
+
+  describe postgres_user(pg_version, 'main', 'test01', 'test01') do
     it { should have_login }
     it { should have_privilege('rolreplication') }
     it { should_not have_privilege('rolsuper') }
   end
 
-  describe postgres_user('test-02', 'test-02') do
+  describe postgres_user(pg_version, 'main', 'test-02', 'test-02') do
     it { should have_login }
     it { should have_privilege('rolsuper') }
   end
 end
+
 control 'postgres master' do
   title 'Postgres cluster'
+
   describe package("postgresql-#{pg_version}") do
     it { should be_installed }
   end
-  describe service('postgresql') do
-    it { should be_enabled }
+
+  # Chef 14 resource service is broken on a first run on Ubuntu 14.
+  if os.name == 'ubuntu' && os.release.to_f > 14.04
+    describe service('postgresql') do
+      it { should be_enabled }
+    end
   end
-  describe postgres_cluster('main') do
+
+  describe postgres_cluster(pg_version, 'main') do
     it { should be_running }
   end
+
   describe port(5432) do
     it { should be_listening }
   end
 end
 
-control 'postgres extensions' do
-  title 'Check postgres extensions'
-  describe postgres_extension('cube', ['test01']) do
-    it { should be_installed }
+control 'postgres databases' do
+  title 'Check postgres databases'
+
+  describe postgres_database(pg_version, 'main', 'test01') do
+    it { should be_created }
+    it { should have_owner('test01') }
   end
 
-  describe postgres_extension('count_distinct', ['test01']) do
-    it { should be_installed }
+  describe postgres_database(pg_version, 'main', 'test-02') do
+    it { should be_created }
+    it { should have_owner('test-02') }
+    it { should_not have_owner('test01') }
+  end
+
+  describe postgres_database(pg_version, 'main', 'test-03') do
+    it { should_not be_created }
   end
 end
-control 'postgres slave' do
-  title 'Postgres cluster'
-  describe service('postgresql') do
-    it { should be_enabled }
+
+control 'postgres extensions' do
+  title 'Check postgres extensions'
+  describe postgres_extension(pg_version, 'main', 'cube', 'test01') do
+    it { should be_installed }
   end
 
-  describe postgres_cluster('slave') do
+  if pg_version.to_f > 9.1
+    describe postgres_extension(pg_version, 'main', 'semver', 'test01') do
+      it { should be_installed }
+    end
+  end
+end
+
+control 'postgres slave' do
+  title 'Postgres cluster'
+  # Chef 14 resource service is broken on a first run on Ubuntu 14.
+  if os.name == 'ubuntu' && os.release.to_f > 14.04
+    describe service('postgresql') do
+      it { should be_enabled }
+    end
+  end
+
+  describe postgres_cluster(pg_version, 'slave') do
     it { should be_running }
   end
 
-  describe postgres_cluster('slave2') do
+  describe postgres_cluster(pg_version, 'slave2') do
     it { should be_stopped }
   end
 
@@ -69,20 +103,52 @@ control 'postgres slave' do
   end
 end
 
-control 'cloud_backup_tests' do
-  title 'Check cloud backup installation'
+control 'WAL-E cloud backup' do
+  title 'Check WAL-E cloud backup installation'
 
-  %w(daemontools lzop mbuffer pv python-dev).each do |pkg|
+  %w(
+    daemontools
+    lzop
+    mbuffer
+    pv
+    python3-dev
+  ).each do |pkg|
     describe package(pkg) do
       it { should be_installed }
     end
   end
 
-  describe pip('virtualenv') do
-    it { should be_installed }
+  %w(
+    wal-e
+    boto
+  ).each do |pip_package|
+    describe pip(pip_package, '/opt/wal-e/bin/pip') do
+      it { should be_installed }
+    end
   end
 
-  describe command('/opt/wal-e/bin/pip show wal-e') do
-    its(:exit_status) { should eq 0 }
+  describe postgres_cluster(pg_version, 'main') do
+    its('archive_command') do
+      should match(%r{envdir /etc/wal-e.d/main-#{pg_version}/env/ /opt/wal-e/bin/wal-e wal-push %p}s)
+    end
+  end
+end
+
+control 'WAL-G cloud backup' do
+  title 'Check WAL-G cloud backup installation'
+  describe file('/usr/local/bin/wal-g') do
+    it { should exist }
+    it { should be_executable }
+  end
+
+  describe file("/etc/wal-g.d/walg-#{pg_version}/env/PGHOST") do
+    it { should exist }
+    its('content') { should match(%r{/var/run/postgresql}) }
+  end
+
+  describe postgres_cluster(pg_version, 'walg') do
+    its('archive_command') do
+      should match(%r{envdir /etc/wal-g.d/walg-#{pg_version}/env/ /usr/local/bin/wal-g wal-push %p}s)
+    end
   end
 end

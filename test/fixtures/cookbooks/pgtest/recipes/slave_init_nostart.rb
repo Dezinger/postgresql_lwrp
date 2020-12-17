@@ -1,6 +1,5 @@
 include_recipe 'postgresql_lwrp::apt_official_repository'
 include_recipe 'postgresql_lwrp::default'
-include_recipe 'sysctl::default'
 
 sysctl_param 'kernel.shmmax' do
   value 68_719_476_736
@@ -8,6 +7,7 @@ end
 
 postgresql 'slave2' do
   cluster_create_options('locale' => 'ru_RU.UTF-8')
+  cluster_version node['pgtest']['version']
   configuration(
     port: '5434',
     listen_addresses: '*',

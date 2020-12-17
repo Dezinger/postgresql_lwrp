@@ -4,20 +4,33 @@
 
 Description
 ===========
-This cookbook includes recipes and providers to install and configure postgresql database. This cookbook was tested with Postgresql 9.0, 9.1, 9.2, 9.3. Version 9.0 is supported with limitations: creating users and databases are not working, also 9.0 not supported in Ubuntu 16.04 and Debian Jessie.
-Supported platforms: Debian Squeeze/Wheezy/Jessie and Ubuntu 12.04/14.04/16.04.
+This cookbook includes recipes and providers to install and configure postgresql database. This cookbook was tested with Postgresql 9.1, 9.2, 9.3, 9.4, 9.5, 9.6 & 10.
+
+Supported platforms:
+
+* Debian 8
+* Debian 9
+* Ubuntu 14.04
+* Ubuntu 16.04
+* Ubuntu 18.04
+
+*Note: TravisCI tests for Ubuntu 18.04 are omitted now because they somehow hang. Local Vagrant & Docker-based tests are succesfull. This will be investigated further.*
 
 Changelog
 =========
-See CHANGELOG.md
+See [CHANGELOG.md](https://github.com/express42/postgresql_lwrp/blob/master/CHANGELOG.md)
 
 Requirements
 ============
-Minimal chef-client version is 11.14.2.
+
+The minimal recommended version of chef-client is `13.0.113`. It may still work on version `12.5.1` and older, but no tests are made starting from version `1.3.0` of this cookbook as Chef 12 is reaching its EOL in the April, 2018
 
 Dependencies
 ============
-Postgresql cookbook depends on apt cookbook.
+
+* apt
+* cron
+* poise-python
 
 Attributes
 ==========
@@ -159,15 +172,15 @@ Example full daily database backup
 
 ```ruby
 postgresql_cloud_backup 'main' do
+  utility 'wal-g'
   in_version '9.3'
   in_cluster 'main'
   full_backup_time weekday: '*', month: '*', day: '*', hour: '3', minute: '0'
   # Data bag item should contain following keys for S3 protocol:
   # aws_access_key_id, aws_secret_access_key, wale_s3_prefix
-  params Chef::EncryptedDataBagItem.load('s3', 'secrets').to_hash.select {|i| i != "id"}
+  parameters Chef::EncryptedDataBagItem.load('s3', 'secrets').to_hash.select {|i| i != "id"}
   # Or just a hash, if you don't use data bags:
-  params { aws_access_key_id: 'access_key', aws_secret_access_key: 'secret_key', wale_s3_prefix: 's3_prefix' }
-  protocol 's3'
+  parameters { aws_access_key_id: 'access_key', aws_secret_access_key: 'secret_key', walg_s3_prefix: 's3_prefix' }
   # In case you need to prepend wal-e with, for example, traffic limiter
   # you can use following method:
   command_prefix 'trickle -s -u 1024'

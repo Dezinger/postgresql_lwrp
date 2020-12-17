@@ -3,49 +3,304 @@ driver_plugin: vagrant
 
 provisioner:
   name: chef_zero
-  require_chef_omnibus: 12
+  chef_license: accept
+
+verifier:
+  name: inspec
+  inspec_tests:
+    - path: test/integration/postgresql_lwrp_test
 
 platforms:
-  - name: ubuntu-12.04
-    driver:
-      box: express42/ubuntu12.04-chef11
   - name: ubuntu-14.04
     driver:
-      box: express42/ubuntu-14.04
+      box: bento/ubuntu-14.04
   - name: ubuntu-16.04
     driver:
-      box: express42/ubuntu-16.04
-  - name: debian-7.9
-  - name: debian-8.4
+      box: bento/ubuntu-16.04
+  - name: ubuntu-18.04
+    driver:
+      box: bento/ubuntu-18.04
+  - name: debian-9
+    driver:
+      box: bento/debian-9
 
 suites:
-  - name: pg-90
-    run_list:
-      - recipe[apt]
-      - recipe[pgtest::test_9_0]
-    excludes:
-      - ubuntu-16.04
-      - debian-8.4
-  - name: pg-91
-    run_list:
-      - recipe[apt]
-      - recipe[pgtest::test_9_1]
-  - name: pg-92
-    run_list:
-      - recipe[apt]
-      - recipe[pgtest::test_9_2]
-  - name: pg-93
-    run_list:
-      - recipe[apt]
-      - recipe[pgtest::test_9_3]
-  - name: pg-94
-    run_list:
-      - recipe[apt]
-      - recipe[pgtest::test_9_4]
-  - name: pg-94-chef11
-    run_list:
-      - recipe[apt]
-      - recipe[pgtest::test_9_4]
+  - name: pg-96-chef13
     provisioner:
-      name: chef_zero
-      require_chef_omnibus: 11.14.2
+      product_name: chef
+      product_version: 13
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.6'
+    verifier:
+      attributes:
+        pg_version: 9.6
+
+  - name: pg-10-chef13
+    provisioner:
+      product_name: chef
+      product_version: 13
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '10'
+    verifier:
+      attributes:
+        pg_version: 10
+
+  - name: pg-11-chef13
+    provisioner:
+      product_name: chef
+      product_version: 13
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '11'
+    verifier:
+      attributes:
+        pg_version: 11
+
+  - name: pg-91-chef14
+    provisioner:
+      product_name: chef
+      product_version: 14
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.1'
+    verifier:
+      attributes:
+        pg_version: 9.1
+    excludes:
+      # There is no official postgresql-9.1 package for Debian 9 & Ubuntu 18.04
+      - debian-9
+      - ubuntu-18.04
+
+  - name: pg-92-chef14
+    provisioner:
+      product_name: chef
+      product_version: 14
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.2'
+    verifier:
+      attributes:
+        pg_version: 9.2
+    excludes:
+      # There is no official postgresql-9.2 package for  Ubuntu 18.04
+      - ubuntu-18.04
+
+  - name: pg-93-chef14
+    provisioner:
+      product_name: chef
+      product_version: 14
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.3'
+    verifier:
+      attributes:
+        pg_version: 9.3
+
+  - name: pg-94-chef14
+    provisioner:
+      product_name: chef
+      product_version: 14
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.4'
+    verifier:
+      attributes:
+        pg_version: 9.4
+
+  - name: pg-95-chef14
+    provisioner:
+      product_name: chef
+      product_version: 14
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.5'
+    verifier:
+      attributes:
+        pg_version: 9.5
+
+  - name: pg-96-chef14
+    provisioner:
+      product_name: chef
+      product_version: 14
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.6'
+    verifier:
+      attributes:
+        pg_version: 9.6
+
+  - name: pg-10-chef14
+    provisioner:
+      product_name: chef
+      product_version: 14
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '10'
+    verifier:
+      attributes:
+        pg_version: 10
+
+  - name: pg-11-chef14
+    provisioner:
+      product_name: chef
+      product_version: 14
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '11'
+    verifier:
+      attributes:
+        pg_version: 11
+
+  - name: pg-91-chef15
+    provisioner:
+      product_name: chef
+      product_version: 15
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.1'
+    verifier:
+      attributes:
+        pg_version: 9.1
+    excludes:
+      # There is no official postgresql-9.1 package for Debian 9 & Ubuntu 18.04
+      - debian-9
+      - ubuntu-18.04
+
+  - name: pg-92-chef15
+    provisioner:
+      product_name: chef
+      product_version: 15
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.2'
+    verifier:
+      attributes:
+        pg_version: 9.2
+    excludes:
+      # There is no official postgresql-9.2 package for  Ubuntu 18.04
+      - ubuntu-18.04
+
+  - name: pg-93-chef15
+    provisioner:
+      product_name: chef
+      product_version: 15
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.3'
+    verifier:
+      attributes:
+        pg_version: 9.3
+
+  - name: pg-94-chef15
+    provisioner:
+      product_name: chef
+      product_version: 15
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.4'
+    verifier:
+      attributes:
+        pg_version: 9.4
+
+  - name: pg-95-chef15
+    provisioner:
+      product_name: chef
+      product_version: 15
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.5'
+    verifier:
+      attributes:
+        pg_version: 9.5
+
+  - name: pg-96-chef15
+    provisioner:
+      product_name: chef
+      product_version: 15
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '9.6'
+    verifier:
+      attributes:
+        pg_version: 9.6
+
+  - name: pg-10-chef15
+    provisioner:
+      product_name: chef
+      product_version: 15
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '10'
+    verifier:
+      attributes:
+        pg_version: 10
+
+  - name: pg-11-chef15
+    provisioner:
+      product_name: chef
+      product_version: 15
+    run_list:
+      - recipe[apt]
+      - recipe[pgtest::test]
+    attributes:
+      pgtest:
+        version: '11'
+    verifier:
+      attributes:
+        pg_version: 11

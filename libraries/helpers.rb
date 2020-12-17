@@ -77,13 +77,12 @@ class Chef
         raise "postgresql create_user: can't get users list\nSTDOUT: #{stdout}\nSTDERR: #{stderr}" unless stderr.empty?
 
         if stdout.include? cluster_user
-          log("postgresql create_user: user '#{cluster_user}' already exists, skiping")
+          Chef::Log.info("postgresql create_user: user '#{cluster_user}' already exists, skiping")
           return nil
-
         else
           stdout, stderr = exec_in_pg_cluster(cluster_version, cluster_name, "CREATE USER \\\"#{cluster_user}\\\" #{options.map { |t| t.join(' ') }.join(' ')}")
           raise "postgresql create_user: can't create user #{cluster_user}\nSTDOUT: #{stdout}\nSTDERR: #{stderr}" unless stdout.include?("CREATE ROLE\n")
-          log("postgresql create_user: user '#{cluster_user}' created")
+          Chef::Log.info("postgresql create_user: user '#{cluster_user}' created")
         end
       end
 
@@ -92,13 +91,13 @@ class Chef
         raise "postgresql create_database: can't get database list\nSTDOUT: #{stdout}\nSTDERR: #{stderr}" unless stderr.empty?
 
         if stdout.gsub(/\s+/, ' ').split(' ').include? cluster_database
-          log("postgresql create_database: database '#{cluster_database}' already exists, skiping")
+          Chef::Log.info("postgresql create_database: database '#{cluster_database}' already exists, skiping")
           return nil
 
         else
           stdout, stderr = exec_in_pg_cluster(cluster_version, cluster_name, "CREATE DATABASE \\\"#{cluster_database}\\\" #{options.map { |t| t.join(' ') }.join(' ')}")
           raise "postgresql create_database: can't create database #{cluster_database}\nSTDOUT: #{stdout}\nSTDERR: #{stderr}" unless stdout.include?("CREATE DATABASE\n")
-          log("postgresql create_database: database '#{cluster_database}' created")
+          Chef::Log.info("postgresql create_database: database '#{cluster_database}' created")
         end
       end
 
@@ -115,12 +114,12 @@ class Chef
         raise "postgresql install_extension: can't get extensions list\nSTDOUT: #{stdout}\nSTDERR: #{stderr}" unless stderr.empty?
 
         if stdout.include? extension
-          log("postgresql install: extension '#{extension}' already installed, skiping")
+          Chef::Log.info("postgresql install: extension '#{extension}' already installed, skiping")
           return nil
         else
           stdout, stderr = exec_in_pg_cluster(cluster_version, cluster_name, cluster_database, "CREATE EXTENSION \\\"#{extension}\\\" #{options.map { |t| t.join(' ') }.join(' ')}")
           raise "postgresql install_extension: can't install extension #{extension}\nSTDOUT: #{stdout}\nSTDERR: #{stderr}" unless stdout.include?("CREATE EXTENSION\n")
-          log("postgresql install_extension: extension '#{extension}' installed")
+          Chef::Log.info("postgresql install_extension: extension '#{extension}' installed")
         end
       end
 
@@ -132,13 +131,13 @@ class Chef
         raise "postgresql install_extension: can't get extensions list\nSTDOUT: #{stdout}\nSTDERR: #{stderr}" unless stderr.empty?
 
         if stdout.include? params[:name].downcase
-          log("postgresql install: extension '#{params[:name]}' already installed, skipping")
+          Chef::Log.info("postgresql install: extension '#{params[:name]}' already installed, skipping")
           return nil
         else
           pgxn_status = Mixlib::ShellOut.new("sudo -u postgres pgxn load '#{params[:name]}'='#{params[:version]}' -d #{params[:db]} --#{params[:stage]}  #{options.map { |t| t.join(' ') }.join(' ')}")
           pgxn_status.run_command
           raise "postgresql install_extension: can't install extension #{params[:name]}\nSTDOUT: #{pgxn_status.stdout}\nSTDERR: #{pgxn_status.stderr}" unless pgxn_status.stdout.include?('CREATE EXTENSION')
-          log("postgresql install_extension: extension '#{params[:name]}' installed")
+          Chef::Log.info("postgresql install_extension: extension '#{params[:name]}' installed")
         end
       end
 
@@ -147,23 +146,6 @@ class Chef
         configuration['unix_socket_directories'] ||= '/var/run/postgresql' if cluster_version.to_f >= 9.3
         configuration.delete('wal_receiver_status_interval') if cluster_version.to_f < 9.1
         configuration.delete('hot_standby_feedback') if cluster_version.to_f < 9.1
-      end
-
-      def cloud_backup_configuration_hacks(configuration, cluster_name, cluster_version, wal_e_bin)
-        configuration['archive_command'] = "envdir /etc/wal-e.d/#{cluster_name}-#{cluster_version}/env/ #{wal_e_bin} wal-push %p"
-      end
-
-      def params_validation(provider, credentials)
-        case provider
-        when 's3'
-          required_params = [:AWS_ACCESS_KEY_ID, :AWS_SECRET_ACCESS_KEY, :WALE_S3_PREFIX]
-        when 'swift'
-          required_params = [:SWIFT_AUTHURL, :SWIFT_TENANT, :SWIFT_USER, :SWIFT_PASSWORD, :WALE_SWIFT_PREFIX]
-        when 'azure'
-          required_params = [:WABS_ACCOUNT_NAME, :WABS_ACCESS_KEY, :WALE_WABS_PREFIX]
-        end
-
-        required_params - credentials.keys.map { |key| key.upcase.to_sym }
       end
     end
   end
